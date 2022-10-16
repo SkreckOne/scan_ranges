@@ -1,5 +1,6 @@
 import logging
 import requests
+import undetected_chromedriver as uc
 from selenium import webdriver
 from time import sleep
 import re
@@ -63,7 +64,7 @@ def create_screen(ip, port, s):
     options = Options()
     options.headless = True
     options.add_argument('ignore-certificate-errors')
-    driver = webdriver.Chrome(options=options)
+    driver = uc.Chrome(options=options)
     print(f'http{s}://{ip}:{port}')
     driver.get(f'http{s}://{ip}:{port}')
     WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
