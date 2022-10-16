@@ -1,19 +1,17 @@
 import logging
+from selenium.webdriver.support import expected_conditions as EC
 import requests
 import undetected_chromedriver as uc
-from selenium import webdriver
 from time import sleep
-import re
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.alert import Alert
 import os
 import ipaddress
 from bs4 import BeautifulSoup
-from aiogram.dispatcher.filters import Text
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InputFile
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.common.exceptions import TimeoutException
 
 os.environ['WDM_SSL_VERIFY'] = '0'
 WORKING = False
@@ -62,30 +60,40 @@ def create_screen(ip, port, s):
         os.remove("screenshot.png")
     except OSError:
         pass
-    # try:
-    options = Options()
-    options.headless = True
-    options.add_argument('--headless')
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument("--disable-web-security")
-    options.add_argument("--allow-running-insecure-content")
-    options.add_argument("--safebrowsing-disable-extension-blacklist")
-    options.add_argument("--safebrowsing-disable-download-protection")
-    options.add_argument('--enable-javascript')
-    options.add_argument("--no-sandbox")
-    desired_capabilities = DesiredCapabilities.CHROME.copy()
-    desired_capabilities['acceptInsecureCerts'] = True
-    driver = uc.Chrome(chrome_options=options, options=options, desired_capabilities=desired_capabilities)
-    print(f'http{s}://{ip}:{port}')
-    driver.get(f'http{s}://{ip}:{port}')
-    WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
+    try:
+        options = Options()
+        options.headless = True
+        options.add_argument('--headless')
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument("--disable-web-security")
+        options.add_argument("--allow-running-insecure-content")
+        options.add_argument("--safebrowsing-disable-extension-blacklist")
+        options.add_argument("--safebrowsing-disable-download-protection")
+        options.add_argument('--enable-javascript')
+        options.add_argument("--no-sandbox")
+        desired_capabilities = DesiredCapabilities.CHROME.copy()
+        desired_capabilities['acceptInsecureCerts'] = True
+        driver = uc.Chrome(chrome_options=options, options=options, desired_capabilities=desired_capabilities)
 
-    driver.set_window_size(800, 600)
-    driver.get_screenshot_as_file("screenshot.png")
-    driver.quit()
-    return InputFile("screenshot.png")
-    # except Exception as ex:
-    #     return str(ex)
+        print(f'http{s}://{ip}:{port}')
+        driver.get(f'http{s}://{ip}:{port}')
+        try:
+            WebDriverWait(driver, 1).until(EC.alert_is_present(),
+                                            'Timed out waiting for PA creation ' +
+                                            'confirmation popup to appear.')
+
+            alert = driver.switch_to.alert
+            alert.accept()
+        except TimeoutException:
+            pass
+        WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
+
+        driver.set_window_size(800, 600)
+        driver.get_screenshot_as_file("screenshot.png")
+        driver.quit()
+        return InputFile("screenshot.png")
+    except Exception as ex:
+        return str(ex)
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -127,7 +135,12 @@ async def echo(message: types.Message):
         if ips[0] == "all":
             ips = all
         for i in ips:
-            for ip in ipaddress.IPv4Network(i, strict=False):
+            rrr = []
+            if i == "51.250.0.0/17":
+                rrr = list(ipaddress.IPv4Network(i, strict=False))[1001:]
+            else:
+                rrr = ipaddress.IPv4Network(i, strict=False)
+            for ip in rrr:
                 print(ip)
                 info = list(set(SearchByIp(ip)))
                 print(info)
