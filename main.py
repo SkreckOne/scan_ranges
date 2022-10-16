@@ -122,7 +122,9 @@ async def echo(message: types.Message):
                                 await message.answer(screen)
                             else:
                                 await bot.send_photo(chat_id=message.chat.id, photo=screen)
+
                                 sleep(2)
+        await message.answer(f"END SCANNING")
     except Exception as ex:
         await message.answer("ERROR:")
         await message.answer(ex)
