@@ -13,8 +13,10 @@ from aiogram.dispatcher.filters import Text
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InputFile
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 os.environ['WDM_SSL_VERIFY'] = '0'
+WORKING = False
 
 def SearchByIp(target):
     infos=[]
@@ -63,9 +65,17 @@ def create_screen(ip, port, s):
     # try:
     options = Options()
     options.headless = True
-    options.add_argument("--window-size=800,600")
-    options.add_argument('ignore-certificate-errors')
-    driver = uc.Chrome(options=options)
+    options.add_argument('--headless')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--safebrowsing-disable-extension-blacklist")
+    options.add_argument("--safebrowsing-disable-download-protection")
+    options.add_argument('--enable-javascript')
+    options.add_argument("--no-sandbox")
+    desired_capabilities = DesiredCapabilities.CHROME.copy()
+    desired_capabilities['acceptInsecureCerts'] = True
+    driver = uc.Chrome(chrome_options=options, options=options, desired_capabilities=desired_capabilities)
     print(f'http{s}://{ip}:{port}')
     driver.get(f'http{s}://{ip}:{port}')
     WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
@@ -80,7 +90,7 @@ def create_screen(ip, port, s):
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    buttons = ["Какая там команада?"]
+    buttons = ["/scan_pool all"]
     keyboard.add(*buttons)
     await message.answer("Usage: /scan_pool <address pool> \n Ex: /scan_pool 196.168.0.0/16\n To scan all yandex: /scan_pool all", reply_markup=keyboard)
 
@@ -105,7 +115,12 @@ all = [
 
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
+    global WORKING
     await message.answer(f"Fuck you")
+    if WORKING:
+        await message.answer(f"Fuck off bitches.")
+        return 0
+    WORKING = True
     try:
         req = message.text.split()
         ips = [req[1]]
@@ -125,7 +140,7 @@ async def echo(message: types.Message):
                                 s = "s"
                             except requests.exceptions.RequestException as e:
                                 try:
-                                    res = requests.get(f'http://{ip}:{port[0]}')
+                                    res = requests.get(f'http://{ip}:{port[0]}', timeout=10)
                                     s = ""
                                 except:
                                     continue
@@ -142,9 +157,14 @@ async def echo(message: types.Message):
 
                                     sleep(2)
         await message.answer(f"END SCANNING")
+        WORKING = False
     except Exception as ex:
         await message.answer("ERROR:")
         await message.answer(ex)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
+
+
+# 51.250.1.157
+# [('80', 'HTTP'), ('5432', 'POSTGRES'), ('22', 'SSH'), ('443', 'HTTP')]
