@@ -32,20 +32,22 @@ def SearchByIp(target):
         'TE': 'trailers',
     }
     i=0
-    response = requests.get(f'''https://search.censys.io/hosts/{target}''', headers=headers)
-    soup = BeautifulSoup(response.content, "html.parser")
-    results = soup.find(id="content")
-    ports = results.find_all("div", class_="protocol-details")
-    for port in ports:
-        soup = BeautifulSoup(str(port), features="lxml")
-        results = soup.h2
-        results = str(results.text)
-        results = results.replace(" ", "")
-        results = results.split('\n')
-        results = results[1].split("/")
-        infos.append((results[0], results[1]))
-    return(infos)
-
+    try:
+        response = requests.get(f'''https://search.censys.io/hosts/{target}''', headers=headers)
+        soup = BeautifulSoup(response.content, "html.parser")
+        results = soup.find(id="content")
+        ports = results.find_all("div", class_="protocol-details")
+        for port in ports:
+            soup = BeautifulSoup(str(port), features="lxml")
+            results = soup.h2
+            results = str(results.text)
+            results = results.replace(" ", "")
+            results = results.split('\n')
+            results = results[1].split("/")
+            infos.append((results[0], results[1]))
+        return(infos)
+    except AttributeError:
+        return []
 API_TOKEN = '5405623026:AAFI4YRUunST0DopqL7xmRF0HXLNzHHakHA'
 
 # Configure logging
@@ -127,7 +129,7 @@ all = [
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
     global WORKING
-    await message.answer(f"Fuck you")
+    await message.answer(f"БОЧКА ВОДКИ")
     if WORKING:
         await message.answer(f"Fuck off bitches.")
         return 0
@@ -140,7 +142,7 @@ async def echo(message: types.Message):
         for i in ips:
             rrr = []
             if i == "51.250.0.0/17":
-                rrr = list(ipaddress.IPv4Network(i, strict=False))[1092:]
+                rrr = list(ipaddress.IPv4Network(i, strict=False))[1428:]
             else:
                 rrr = ipaddress.IPv4Network(i, strict=False)
             for ip in rrr:
