@@ -147,15 +147,13 @@ async def echo(message: types.Message):
                             res = res.status_code
                             if res // 100 != 5 and res // 100 != 4:
                                 await message.answer(f"Find port {ip}:{port[0]}")
-                                sleep(2)
                                 screen = create_screen(ip, port[0], s)
                                 if type(screen) is str:
                                     await message.answer("ERROR:")
                                     await message.answer(screen)
                                 else:
                                     await bot.send_photo(chat_id=message.chat.id, photo=screen)
-
-                                    sleep(2)
+                                    sleep(1.5)
         await message.answer(f"END SCANNING")
         WORKING = False
     except Exception as ex:
