@@ -85,7 +85,7 @@ async def echo(message: types.Message):
         ip = req[1]
         ports = req[2].split(",")
         for ip in ipaddress.IPv4Network(ip):
-            info = SearchByIp(ip)
+            info = list(set(SearchByIp(ip)))
             print(info)
             s = ""
             if info:
