@@ -74,9 +74,12 @@ def create_screen(ip, port, s):
         desired_capabilities = DesiredCapabilities.CHROME.copy()
         desired_capabilities['acceptInsecureCerts'] = True
         driver = uc.Chrome(chrome_options=options, options=options, desired_capabilities=desired_capabilities)
-
+        driver.set_page_load_timeout(10)
         print(f'http{s}://{ip}:{port}')
-        driver.get(f'http{s}://{ip}:{port}')
+        try:
+            driver.get(f'http{s}://{ip}:{port}')
+        except TimeoutException:
+            return "TIMEOUT"
         try:
             WebDriverWait(driver, 1).until(EC.alert_is_present(),
                                             'Timed out waiting for PA creation ' +
@@ -137,7 +140,7 @@ async def echo(message: types.Message):
         for i in ips:
             rrr = []
             if i == "51.250.0.0/17":
-                rrr = list(ipaddress.IPv4Network(i, strict=False))[1001:]
+                rrr = list(ipaddress.IPv4Network(i, strict=False))[1092:]
             else:
                 rrr = ipaddress.IPv4Network(i, strict=False)
             for ip in rrr:
@@ -162,7 +165,6 @@ async def echo(message: types.Message):
                                 await message.answer(f"Find port {ip}:{port[0]}")
                                 screen = create_screen(ip, port[0], s)
                                 if type(screen) is str:
-                                    await message.answer("ERROR:")
                                     await message.answer(screen)
                                 else:
                                     await bot.send_photo(chat_id=message.chat.id, photo=screen)
