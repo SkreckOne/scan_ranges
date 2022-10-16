@@ -38,7 +38,8 @@ def SearchByIp(target):
         results = str(results.text)
         results = results.replace(" ", "")
         results = results.split('\n')
-        infos.append(results[1].split("/")[0])
+        results = results[1].split("/")
+        infos.append((results[0], results[1]))
     return(infos)
 
 API_TOKEN = '5405623026:AAFI4YRUunST0DopqL7xmRF0HXLNzHHakHA'
@@ -71,36 +72,35 @@ async def send_welcome(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = ["Какая там команада?"]
     keyboard.add(*buttons)
-    await message.answer("Usage: /scan_pool <address pool> <ports>\n Ex: /scan_pool 196.168.0.0/16 8080,80,1337", reply_markup=keyboard)
+    await message.answer("Usage: /scan_pool <address pool> \n Ex: /scan_pool 196.168.0.0/16", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text == "Какая там команада?")
 async def with_puree(message: types.Message):
-    await message.answer("Ex: /scan_pool 196.168.0.0/16 8080,80,1337", reply_markup=keyboard)
+    await message.answer("Ex: /scan_pool 196.168.0.0/16")
 
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
     try:
         req = message.text.split()
         ip = req[1]
-        ports = req[2].split(",")
         for ip in ipaddress.IPv4Network(ip):
             info = list(set(SearchByIp(ip)))
             print(info)
             s = ""
             if info:
                 for port in info:
-                    if port in ports:
+                    if port[1] == "HTTP":
                         try:
-                            res = requests.get(f'http://{ip}:{port}')
+                            res = requests.get(f'http://{ip}:{port[0]}')
                             s = ""
                         except:
-                            res = requests.get(f'https://{ip}:{port}')
+                            res = requests.get(f'https://{ip}:{port[0]}')
                             s = "s"
                         res = res.status_code
                         if res / 100 != 5 or res / 100 != 4:
-                            await message.answer(f"Find port {ip}:{port}")
-                            screen = create_screen(ip, port, s)
+                            await message.answer(f"Find port {ip}:{port[0]}")
+                            screen = create_screen(ip, port[0], s)
                             await bot.send_photo(chat_id=message.chat.id, photo=screen)
 
     except:
