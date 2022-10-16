@@ -82,48 +82,65 @@ async def send_welcome(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = ["Какая там команада?"]
     keyboard.add(*buttons)
-    await message.answer("Usage: /scan_pool <address pool> \n Ex: /scan_pool 196.168.0.0/16", reply_markup=keyboard)
+    await message.answer("Usage: /scan_pool <address pool> \n Ex: /scan_pool 196.168.0.0/16\n To scan all yandex: /scan_pool all", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text == "Какая там команада?")
 async def with_puree(message: types.Message):
     await message.answer("Ex: /scan_pool 196.168.0.0/16")
 
+all = [
+"31.44.8.0/21",
+"51.250.0.0/17",
+"62.84.112.0/20",
+"84.201.128.0/18",
+"84.252.128.0/20",
+"89.169.128.0/18",
+"130.193.32.0/19",
+"158.160.0.0/16",
+"178.154.192.0/18",
+"178.170.222.0/24",
+"185.206.164.0/22",
+"193.32.216.0/22",
+"217.28.224.0/20"]
+
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
     try:
         req = message.text.split()
-        ips = req[1]
-        print(ips)
-        for ip in ipaddress.IPv4Network(ips, strict=False):
-            print(ip)
-            info = list(set(SearchByIp(ip)))
-            print(info)
-            s = ""
-            if info:
-                for port in info:
-                    if port[1] == "HTTP":
-                        try:
-                            res = requests.get(f'https://{ip}:{port[0]}', verify=False)
-                            s = "s"
-                        except requests.exceptions.RequestException as e:
+        ips = [req[1]]
+        if ips[0] == "all":
+            ips = all
+        for i in ips:
+            for ip in ipaddress.IPv4Network(i, strict=False):
+                print(ip)
+                info = list(set(SearchByIp(ip)))
+                print(info)
+                s = ""
+                if info:
+                    for port in info:
+                        if port[1] == "HTTP":
                             try:
-                                res = requests.get(f'http://{ip}:{port[0]}')
-                                s = ""
-                            except:
-                                continue
-                        res = res.status_code
-                        if res / 100 != 5 or res / 100 != 4:
-                            await message.answer(f"Find port {ip}:{port[0]}")
-                            sleep(2)
-                            screen = create_screen(ip, port[0], s)
-                            if type(screen) is str:
-                                await message.answer("ERROR:")
-                                await message.answer(screen)
-                            else:
-                                await bot.send_photo(chat_id=message.chat.id, photo=screen)
-
+                                res = requests.get(f'https://{ip}:{port[0]}', verify=False)
+                                s = "s"
+                            except requests.exceptions.RequestException as e:
+                                try:
+                                    res = requests.get(f'http://{ip}:{port[0]}')
+                                    s = ""
+                                except:
+                                    continue
+                            res = res.status_code
+                            if res / 100 != 5 or res / 100 != 4:
+                                await message.answer(f"Find port {ip}:{port[0]}")
                                 sleep(2)
+                                screen = create_screen(ip, port[0], s)
+                                if type(screen) is str:
+                                    await message.answer("ERROR:")
+                                    await message.answer(screen)
+                                else:
+                                    await bot.send_photo(chat_id=message.chat.id, photo=screen)
+
+                                    sleep(2)
         await message.answer(f"END SCANNING")
     except Exception as ex:
         await message.answer("ERROR:")
