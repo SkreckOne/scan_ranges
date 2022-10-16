@@ -106,6 +106,7 @@ all = [
 
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
+    await message.answer(f"Fuck you")
     try:
         req = message.text.split()
         ips = [req[1]]
