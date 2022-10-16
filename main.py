@@ -3,14 +3,17 @@ import requests
 from selenium import webdriver
 from time import sleep
 import re
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.alert import Alert
 import os
 import ipaddress
 from bs4 import BeautifulSoup
 from aiogram.dispatcher.filters import Text
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InputFile
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 
+os.environ['WDM_SSL_VERIFY'] = '0'
 
 def SearchByIp(target):
     infos=[]
@@ -56,16 +59,20 @@ def create_screen(ip, port, s):
         os.remove("screenshot.png")
     except OSError:
         pass
+    # try:
     options = Options()
     options.headless = True
-    driver = webdriver.Firefox(options=options)
+    options.add_argument('ignore-certificate-errors')
+    driver = webdriver.Chrome(options=options)
+    print(f'http{s}://{ip}:{port}')
     driver.get(f'http{s}://{ip}:{port}')
-    sleep(1)
+    WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
 
     driver.get_screenshot_as_file("screenshot.png")
     driver.quit()
     return InputFile("screenshot.png")
-
+    # except Exception as ex:
+    #     return str(ex)
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -83,8 +90,10 @@ async def with_puree(message: types.Message):
 async def echo(message: types.Message):
     try:
         req = message.text.split()
-        ip = req[1]
-        for ip in ipaddress.IPv4Network(ip):
+        ips = req[1]
+        print(ips)
+        for ip in ipaddress.IPv4Network(ips, strict=False):
+            print(ip)
             info = list(set(SearchByIp(ip)))
             print(info)
             s = ""
@@ -92,19 +101,28 @@ async def echo(message: types.Message):
                 for port in info:
                     if port[1] == "HTTP":
                         try:
-                            res = requests.get(f'http://{ip}:{port[0]}')
-                            s = ""
-                        except:
-                            res = requests.get(f'https://{ip}:{port[0]}')
+                            res = requests.get(f'https://{ip}:{port[0]}', verify=False)
                             s = "s"
+                        except requests.exceptions.RequestException as e:
+                            try:
+                                res = requests.get(f'http://{ip}:{port[0]}')
+                                s = ""
+                            except:
+                                continue
                         res = res.status_code
                         if res / 100 != 5 or res / 100 != 4:
                             await message.answer(f"Find port {ip}:{port[0]}")
+                            sleep(2)
                             screen = create_screen(ip, port[0], s)
-                            await bot.send_photo(chat_id=message.chat.id, photo=screen)
-
-    except:
-        await message.answer("Error")
+                            if type(screen) is str:
+                                await message.answer("ERROR:")
+                                await message.answer(screen)
+                            else:
+                                await bot.send_photo(chat_id=message.chat.id, photo=screen)
+                                sleep(2)
+    except Exception as ex:
+        await message.answer("ERROR:")
+        await message.answer(ex)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
