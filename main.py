@@ -76,7 +76,7 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler(lambda message: message.text == "Какая там команада?")
 async def with_puree(message: types.Message):
-    await message.answer("Ex: /scan_pool 196.168.0.0/16 8080,80,1337")
+    await message.answer("Ex: /scan_pool 196.168.0.0/16 8080,80,1337", reply_markup=keyboard)
 
 @dp.message_handler(commands=['scan_pool'])
 async def echo(message: types.Message):
