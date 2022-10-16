@@ -63,12 +63,14 @@ def create_screen(ip, port, s):
     # try:
     options = Options()
     options.headless = True
+    options.add_argument("--window-size=800,600")
     options.add_argument('ignore-certificate-errors')
     driver = uc.Chrome(options=options)
     print(f'http{s}://{ip}:{port}')
     driver.get(f'http{s}://{ip}:{port}')
     WebDriverWait(driver, 5).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
 
+    driver.set_window_size(800, 600)
     driver.get_screenshot_as_file("screenshot.png")
     driver.quit()
     return InputFile("screenshot.png")
