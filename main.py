@@ -90,7 +90,6 @@ async def with_puree(message: types.Message):
     await message.answer("Ex: /scan_pool 196.168.0.0/16")
 
 all = [
-"31.44.8.0/21",
 "51.250.0.0/17",
 "62.84.112.0/20",
 "84.201.128.0/18",
@@ -122,7 +121,7 @@ async def echo(message: types.Message):
                     for port in info:
                         if port[1] == "HTTP":
                             try:
-                                res = requests.get(f'https://{ip}:{port[0]}', verify=False)
+                                res = requests.get(f'https://{ip}:{port[0]}', verify=False, timeout=10)
                                 s = "s"
                             except requests.exceptions.RequestException as e:
                                 try:
@@ -131,7 +130,7 @@ async def echo(message: types.Message):
                                 except:
                                     continue
                             res = res.status_code
-                            if res / 100 != 5 or res / 100 != 4:
+                            if res // 100 != 5 and res // 100 != 4:
                                 await message.answer(f"Find port {ip}:{port[0]}")
                                 sleep(2)
                                 screen = create_screen(ip, port[0], s)
